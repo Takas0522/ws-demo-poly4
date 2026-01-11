@@ -1,6 +1,6 @@
 # Service Settings Service
 
-サービス設定サービス - アプリケーション設定とテナント固有の構成を管理するマイクロサービス
+Service Settings Service - サービス設定サービス (FastAPI Python implementation)
 
 ## 🎯 概要
 
@@ -21,7 +21,7 @@
 
 ### 前提条件
 
-- Node.js 20.x以上
+- Python 3.11以上
 - Azure CosmosDB アカウント
 - Redis サーバー（オプション）
 
@@ -29,7 +29,14 @@
 
 ```bash
 cd src/service-setting-service
-npm install
+
+# 仮想環境の作成
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 依存関係のインストール
+pip install -r requirements.txt
+pip install -r requirements-dev.txt  # 開発環境用
 ```
 
 ### 環境変数設定
@@ -49,19 +56,11 @@ cp .env.example .env
 ### 開発環境での実行
 
 ```bash
-npm run dev
-```
+# Uvicornで起動
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-### ビルド
-
-```bash
-npm run build
-```
-
-### 本番環境での実行
-
-```bash
-npm start
+# または
+python -m app.main
 ```
 
 ## 🐳 Dockerでの実行
@@ -79,13 +78,13 @@ docker-compose up -d
 ### 設定管理
 
 #### 設定の作成
-```
+```http
 POST /api/configurations
 Content-Type: application/json
 Authorization: Bearer <token>
 
 {
-  "tenantId": "tenant-123",
+  "tenant_id": "tenant-123",
   "key": "app.feature.enabled",
   "value": true,
   "description": "Feature flag for new feature",
@@ -94,45 +93,45 @@ Authorization: Bearer <token>
 ```
 
 #### 設定の取得（ID）
-```
-GET /api/configurations/:id
+```http
+GET /api/configurations/{id}
 Authorization: Bearer <token>
 ```
 
 #### 設定の取得（キー）
-```
-GET /api/configurations/key/:key
+```http
+GET /api/configurations/key/{key}
 Authorization: Bearer <token>
 ```
 
 #### 設定一覧の取得
-```
-GET /api/configurations?includeInherited=true
+```http
+GET /api/configurations?include_inherited=true
 Authorization: Bearer <token>
 ```
 
 #### 設定の更新
-```
-PUT /api/configurations/:id
+```http
+PUT /api/configurations/{id}
 Content-Type: application/json
 Authorization: Bearer <token>
 
 {
   "value": false,
-  "changeReason": "Disable feature for maintenance"
+  "change_reason": "Disable feature for maintenance"
 }
 ```
 
 #### 設定の削除
-```
-DELETE /api/configurations/:id
+```http
+DELETE /api/configurations/{id}
 Authorization: Bearer <token>
 ```
 
 ### バックアップ/リストア
 
 #### バックアップの作成
-```
+```http
 POST /api/configurations/backup
 Content-Type: application/json
 Authorization: Bearer <token>
@@ -143,62 +142,71 @@ Authorization: Bearer <token>
 ```
 
 #### バックアップのリストア
-```
-POST /api/configurations/restore/:backupId
+```http
+POST /api/configurations/restore/{backup_id}
 Authorization: Bearer <token>
 ```
 
 ### ヘルスチェック
 
-```
+```http
 GET /api/health
 ```
+
+### API ドキュメント
+
+サービスを起動後、以下のURLでAPI ドキュメントにアクセスできます：
+
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
 ## 🧪 テスト
 
 ```bash
 # すべてのテストを実行
-npm test
+pytest
 
-# ウォッチモード
-npm run test:watch
+# カバレッジ付きで実行
+pytest --cov=app --cov-report=html
 
-# カバレッジ
-npm run test:coverage
+# 特定のテストファイルを実行
+pytest tests/test_configuration_service.py
 ```
 
 ## 🔧 開発
 
-### リント
+### コードフォーマット
 
 ```bash
-npm run lint
-npm run lint:fix
+# Black でフォーマット
+black app tests
+
+# Flake8 でリント
+flake8 app tests
+
+# MyPy で型チェック
+mypy app
 ```
 
 ## 🏗️ アーキテクチャ
 
 ```
-src/
-├── config/           # アプリケーション設定
-├── controllers/      # リクエストハンドラー
-├── middleware/       # Express ミドルウェア
-├── repositories/     # データアクセス層
-├── routes/           # APIルート定義
-├── services/         # ビジネスロジック
-├── types/            # TypeScript型定義
-├── utils/            # ユーティリティ関数
-├── validators/       # バリデーションスキーマ
-├── app.ts            # アプリケーション設定
-└── index.ts          # エントリーポイント
+app/
+├── core/              # アプリケーション設定とロガー
+├── models/            # Pydantic モデル
+├── middleware/        # 認証とテナント分離
+├── repositories/      # データアクセス層（CosmosDB, Redis）
+├── services/          # ビジネスロジック
+├── routes/            # FastAPI ルート定義
+└── main.py            # アプリケーションエントリーポイント
 ```
 
 ## 🔐 セキュリティ
 
 - JWT認証による保護
 - テナント分離の実装
-- 入力バリデーション
-- エラーハンドリング
+- Pydantic による入力バリデーション
+- FastAPI の自動エラーハンドリング
 
 ## 📝 ライセンス
 

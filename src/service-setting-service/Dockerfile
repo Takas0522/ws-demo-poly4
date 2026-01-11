@@ -1,44 +1,18 @@
-# Build stage
-FROM node:20-alpine AS builder
+FROM python:3.11-slim
 
 WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-COPY tsconfig.json ./
 
 # Install dependencies
-RUN npm ci
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source code
-COPY src ./src
-
-# Build application
-RUN npm run build
-
-# Production stage
-FROM node:20-alpine
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install production dependencies only
-RUN npm ci --only=production
-
-# Copy built application from builder
-COPY --from=builder /app/dist ./dist
+# Copy application code
+COPY app ./app
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+RUN useradd -m -u 1001 appuser && chown -R appuser:appuser /app
+USER appuser
 
-# Create logs directory
-RUN mkdir -p logs && chown nodejs:nodejs logs
+EXPOSE 8000
 
-USER nodejs
-
-EXPOSE 3000
-
-CMD ["node", "dist/index.js"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

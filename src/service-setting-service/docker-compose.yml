@@ -6,10 +6,11 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "8000:8000"
     environment:
-      - NODE_ENV=development
-      - PORT=3000
+      - ENVIRONMENT=development
+      - PORT=8000
+      - HOST=0.0.0.0
       - COSMOS_ENDPOINT=${COSMOS_ENDPOINT}
       - COSMOS_KEY=${COSMOS_KEY}
       - COSMOS_DATABASE=settingsdb
@@ -17,8 +18,9 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JWT_SECRET=${JWT_SECRET}
+      - JWT_ALGORITHM=HS256
       - JWT_ISSUER=auth-service
-      - LOG_LEVEL=info
+      - LOG_LEVEL=INFO
     depends_on:
       - redis
     networks:
