@@ -15,11 +15,17 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Service Settings Service...")
     try:
         await cosmos_client.initialize()
+        if cosmos_client._initialized:
+            logger.info("✅ CosmosDB initialized successfully")
+        else:
+            logger.warning("❌ Warning: CosmosDB connection failed")
+            logger.warning("   Please ensure CosmosDB Emulator is running")
+
         await cache_service.connect()
         logger.info("Service initialization complete")
     except Exception as e:
         logger.error(f"Failed to initialize service: {e}")
-        raise
+        logger.warning("Service will continue with limited functionality")
 
     yield
 
