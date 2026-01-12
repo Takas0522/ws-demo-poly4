@@ -75,11 +75,13 @@ class CosmosDBClient:
                     try:
                         self.container = self.database.get_container_client(
                             settings.COSMOS_CONTAINER)
-                        logger.info("CosmosDB container already exists, using existing container")
+                        logger.info(
+                            "CosmosDB container already exists, using existing container")
                         self._initialized = True
                         return
                     except Exception as get_error:
-                        logger.error(f"Failed to get existing container: {get_error}")
+                        logger.error(
+                            f"Failed to get existing container: {get_error}")
                         logger.warning(
                             "Service will continue without CosmosDB connection")
                         return
