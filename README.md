@@ -8,20 +8,21 @@ Service Settings Service - サービス設定サービス (FastAPI Python implem
 
 ### 主な機能
 
-- ✅ 設定CRUD API
+- ✅ 設定 CRUD API
 - ✅ テナント固有設定の管理
 - ✅ 設定検証とスキーマ
 - ✅ 設定キャッシング（Redis）
 - ✅ 設定継承
 - ✅ 構成のバックアップ/リストア機能
-- ✅ JWT認証とテナント分離
-- ✅ CosmosDB統合
+- ✅ JWT 認証とテナント分離
+- ✅ CosmosDB 統合
+- **Default Port**: 3003
 
 ## 🚀 セットアップ
 
 ### 前提条件
 
-- Python 3.11以上
+- Python 3.11 以上
 - Azure CosmosDB アカウント
 - Redis サーバー（オプション）
 
@@ -48,22 +49,24 @@ cp .env.example .env
 ```
 
 必要な環境変数:
-- `COSMOS_ENDPOINT`: CosmosDBエンドポイント
-- `COSMOS_KEY`: CosmosDBアクセスキー
-- `JWT_SECRET`: JWT署名シークレット
-- `REDIS_HOST`: Redisホスト（オプション）
+
+- `PORT`: サービスポート (デフォルト: 3003)
+- `COSMOS_ENDPOINT`: CosmosDB エンドポイント
+- `COSMOS_KEY`: CosmosDB アクセスキー
+- `JWT_SECRET`: JWT 署名シークレット
+- `REDIS_HOST`: Redis ホスト（オプション）
 
 ### 開発環境での実行
 
 ```bash
 # Uvicornで起動
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 3003
 
 # または
 python -m app.main
 ```
 
-## 🐳 Dockerでの実行
+## 🐳 Docker での実行
 
 ```bash
 docker-compose up -d
@@ -78,6 +81,7 @@ docker-compose up -d
 ### 設定管理
 
 #### 設定の作成
+
 ```http
 POST /api/configurations
 Content-Type: application/json
@@ -93,24 +97,28 @@ Authorization: Bearer <token>
 ```
 
 #### 設定の取得（ID）
+
 ```http
 GET /api/configurations/{id}
 Authorization: Bearer <token>
 ```
 
 #### 設定の取得（キー）
+
 ```http
 GET /api/configurations/key/{key}
 Authorization: Bearer <token>
 ```
 
 #### 設定一覧の取得
+
 ```http
 GET /api/configurations?include_inherited=true
 Authorization: Bearer <token>
 ```
 
 #### 設定の更新
+
 ```http
 PUT /api/configurations/{id}
 Content-Type: application/json
@@ -123,6 +131,7 @@ Authorization: Bearer <token>
 ```
 
 #### 設定の削除
+
 ```http
 DELETE /api/configurations/{id}
 Authorization: Bearer <token>
@@ -131,6 +140,7 @@ Authorization: Bearer <token>
 ### バックアップ/リストア
 
 #### バックアップの作成
+
 ```http
 POST /api/configurations/backup
 Content-Type: application/json
@@ -142,6 +152,7 @@ Authorization: Bearer <token>
 ```
 
 #### バックアップのリストア
+
 ```http
 POST /api/configurations/restore/{backup_id}
 Authorization: Bearer <token>
@@ -155,7 +166,7 @@ GET /api/health
 
 ### API ドキュメント
 
-サービスを起動後、以下のURLでAPI ドキュメントにアクセスできます：
+サービスを起動後、以下の URL で API ドキュメントにアクセスできます：
 
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
@@ -203,7 +214,7 @@ app/
 
 ## 🔐 セキュリティ
 
-- JWT認証による保護
+- JWT 認証による保護
 - テナント分離の実装
 - Pydantic による入力バリデーション
 - FastAPI の自動エラーハンドリング

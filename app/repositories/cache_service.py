@@ -12,6 +12,12 @@ class CacheService:
 
     async def connect(self) -> None:
         """Connect to Redis"""
+        # Skip Redis connection if host is not configured
+        if not settings.REDIS_HOST:
+            logger.info("Redis host not configured, skipping Redis connection")
+            self.is_connected = False
+            return
+
         try:
             self.redis = await redis.Redis(
                 host=settings.REDIS_HOST,

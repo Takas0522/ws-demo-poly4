@@ -4,7 +4,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # Server Configuration
-    PORT: int = 8000
+    PORT: int = 3003
     HOST: str = "0.0.0.0"
     ENVIRONMENT: str = "development"
 
