@@ -28,9 +28,9 @@ service_management = ServiceManagementService(service_repo, tenant_repo, cache_s
 
 
 @router.post("/services", response_model=ServiceResponse, status_code=status.HTTP_201_CREATED)
-@require_permission("services.create", scope="global")
 async def create_service(
-    service: ServiceCreate, current_user: JWTPayload = Depends(get_current_user)
+    service: ServiceCreate,
+    current_user: JWTPayload = Depends(require_permission("services.create", scope="global")),
 ) -> ServiceResponse:
     """
     Create a new service (Global admin only).
@@ -62,21 +62,20 @@ async def get_service(
 
 
 @router.put("/services/{service_id}", response_model=ServiceResponse)
-@require_permission("services.update", scope="global")
 async def update_service(
+    *,
     service_id: str = Path(..., description="Service ID"),
-    updates: ServiceUpdate = ...,
-    current_user: JWTPayload = Depends(get_current_user),
+    updates: ServiceUpdate,
+    current_user: JWTPayload = Depends(require_permission("services.update", scope="global")),
 ) -> ServiceResponse:
     """Update a service (Global admin only)."""
     return await service_management.update_service(service_id, updates, current_user.sub)
 
 
 @router.delete("/services/{service_id}", status_code=status.HTTP_204_NO_CONTENT)
-@require_permission("services.delete", scope="global")
 async def delete_service(
     service_id: str = Path(..., description="Service ID"),
-    current_user: JWTPayload = Depends(get_current_user),
+    current_user: JWTPayload = Depends(require_permission("services.delete", scope="global")),
 ) -> None:
     """Delete a service (Global admin only)."""
     await service_management.delete_service(service_id)
@@ -90,11 +89,11 @@ async def delete_service(
     response_model=TenantServiceResponse,
     status_code=status.HTTP_201_CREATED,
 )
-@require_permission("services.update")
 async def assign_service_to_tenant(
+    *,
     tenant_id: str = Path(..., description="Tenant ID"),
-    request: AssignServiceRequest = ...,
-    current_user: JWTPayload = Depends(get_current_user),
+    request: AssignServiceRequest,
+    current_user: JWTPayload = Depends(require_permission("services.update")),
 ) -> TenantServiceResponse:
     """
     Assign a service to a tenant.
@@ -107,10 +106,9 @@ async def assign_service_to_tenant(
 
 
 @router.get("/tenants/{tenant_id}/services", response_model=List[ServiceResponse])
-@require_permission("services.read")
 async def get_tenant_services(
     tenant_id: str = Path(..., description="Tenant ID"),
-    current_user: JWTPayload = Depends(get_current_user),
+    current_user: JWTPayload = Depends(require_permission("services.read")),
 ) -> List[ServiceResponse]:
     """
     Get all services assigned to a tenant.
@@ -124,11 +122,10 @@ async def get_tenant_services(
 @router.delete(
     "/tenants/{tenant_id}/services/{service_id}", status_code=status.HTTP_204_NO_CONTENT
 )
-@require_permission("services.delete")
 async def remove_service_from_tenant(
     tenant_id: str = Path(..., description="Tenant ID"),
     service_id: str = Path(..., description="Service ID"),
-    current_user: JWTPayload = Depends(get_current_user),
+    current_user: JWTPayload = Depends(require_permission("services.delete")),
 ) -> None:
     """
     Remove (disable) a service from a tenant.
@@ -143,9 +140,8 @@ async def remove_service_from_tenant(
 
 
 @router.get("/analytics/services/usage", response_model=ServiceAnalytics)
-@require_permission("analytics.read", scope="global")
 async def get_service_usage_stats(
-    current_user: JWTPayload = Depends(get_current_user),
+    current_user: JWTPayload = Depends(require_permission("analytics.read", scope="global")),
 ) -> ServiceAnalytics:
     """
     Get service usage statistics across all tenants (Global admin only).
@@ -156,10 +152,9 @@ async def get_service_usage_stats(
 
 
 @router.get("/analytics/tenants/{tenant_id}/service-activity", response_model=Dict[str, Any])
-@require_permission("analytics.read")
 async def get_tenant_service_activity(
     tenant_id: str = Path(..., description="Tenant ID"),
-    current_user: JWTPayload = Depends(get_current_user),
+    current_user: JWTPayload = Depends(require_permission("analytics.read")),
 ) -> Dict[str, Any]:
     """
     Get service activity for a specific tenant.

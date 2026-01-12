@@ -32,6 +32,8 @@ class ServiceRepository:
             except Exception as e:
                 logger.error(f"Failed to get services container: {e}")
                 raise RuntimeError("Services container not available")
+        if not self._container:
+            raise RuntimeError("Services container not available - CosmosDB not initialized")
         return self._container
 
     async def create(self, service: Dict[str, Any]) -> Dict[str, Any]:
@@ -133,6 +135,8 @@ class TenantRepository:
             except Exception as e:
                 logger.error(f"Failed to get tenants container: {e}")
                 raise RuntimeError("Tenants container not available")
+        if not self._container:
+            raise RuntimeError("Tenants container not available - CosmosDB not initialized")
         return self._container
 
     async def get_by_id(self, tenant_id: str) -> Optional[Dict[str, Any]]:
