@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.core.logger import logger
 from app.routes.configuration_routes import router as config_router
+from app.routes.service_routes import router as service_router
 from app.repositories.cosmos_client import cosmos_client
 from app.repositories.cache_service import cache_service
 
@@ -53,6 +54,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(config_router, prefix="/api")
+app.include_router(service_router, prefix="/api")
 
 
 @app.get("/api/health")
