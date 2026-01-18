@@ -14,13 +14,12 @@ from app.middleware.auth import get_current_user
 from app.middleware.tenant_isolation import verify_tenant_access
 from app.services.configuration_service import ConfigurationService
 from app.repositories.configuration_repository import ConfigurationRepository
-from app.repositories.cache_service import cache_service
 
 router = APIRouter(prefix="/configurations", tags=["configurations"])
 
 # Initialize service
 repository = ConfigurationRepository()
-config_service = ConfigurationService(repository, cache_service)
+config_service = ConfigurationService(repository)
 
 
 @router.post("/", response_model=Configuration, status_code=status.HTTP_201_CREATED)

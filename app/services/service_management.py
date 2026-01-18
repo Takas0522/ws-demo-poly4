@@ -2,7 +2,6 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from fastapi import HTTPException, status
 from app.repositories.service_repository import ServiceRepository, TenantRepository
-from app.repositories.cache_service import CacheService
 from app.models.service import (
     ServiceCreate,
     ServiceUpdate,
@@ -20,11 +19,10 @@ class ServiceManagementService:
     """Service for managing services and tenant assignments"""
 
     def __init__(
-        self, service_repo: ServiceRepository, tenant_repo: TenantRepository, cache: CacheService
+        self, service_repo: ServiceRepository, tenant_repo: TenantRepository
     ):
         self.service_repo = service_repo
         self.tenant_repo = tenant_repo
-        self.cache = cache
 
     async def create_service(self, service: ServiceCreate, created_by: str) -> ServiceResponse:
         """Create a new service"""
@@ -61,30 +59,16 @@ class ServiceManagementService:
         # Save to database
         created = await self.service_repo.create(service_doc)
 
-        # Invalidate cache
-        await self.cache.delete("services:all")
-
         logger.info(f"Service created: {service_id} by {created_by}")
         return ServiceResponse(**created)
 
     async def list_services(
         self, status: Optional[str] = None, category: Optional[str] = None
     ) -> List[ServiceResponse]:
-        """List all services with optional filters and caching"""
-        cache_key = "services:all"
-
-        # Try to get from cache
-        cached = await self.cache.get(cache_key)
-        if cached:
-            logger.debug("Services loaded from cache")
-            services = cached
-        else:
-            # Load from database
-            services = await self.service_repo.list_all()
-
-            # Cache for 10 minutes (600 seconds)
-            await self.cache.set(cache_key, services, ttl=600)
-            logger.debug(f"Services loaded from database and cached: {len(services)}")
+        """List all services with optional filters"""
+        # Load from database
+        services = await self.service_repo.list_all()
+        logger.debug(f"Services loaded from database: {len(services)}")
 
         # Apply filters
         if status:
@@ -137,9 +121,6 @@ class ServiceManagementService:
 
         # Update in database
         updated = await self.service_repo.update(service_id, update_dict)
-
-        # Invalidate cache
-        await self.cache.delete("services:all")
 
         logger.info(f"Service updated: {service_id} by {updated_by}")
         return ServiceResponse(**updated)

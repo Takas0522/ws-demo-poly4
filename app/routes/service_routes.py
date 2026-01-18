@@ -14,14 +14,13 @@ from app.middleware.permissions import require_permission
 from app.middleware.tenant_isolation import verify_tenant_access
 from app.services.service_management import ServiceManagementService
 from app.repositories.service_repository import ServiceRepository, TenantRepository
-from app.repositories.cache_service import cache_service
 
 router = APIRouter(tags=["services"])
 
 # Initialize repositories and service
 service_repo = ServiceRepository()
 tenant_repo = TenantRepository()
-service_management = ServiceManagementService(service_repo, tenant_repo, cache_service)
+service_management = ServiceManagementService(service_repo, tenant_repo)
 
 
 # Service Catalog CRUD APIs

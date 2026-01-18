@@ -14,12 +14,6 @@ class Settings(BaseSettings):
     COSMOS_DATABASE: str = "settingsdb"
     COSMOS_CONTAINER: str = "configurations"
 
-    # Redis Configuration
-    REDIS_HOST: str = "redis"
-    REDIS_PORT: int = 6379
-    REDIS_PASSWORD: Optional[str] = None
-    CACHE_TTL: int = 3600
-
     # JWT Configuration
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"

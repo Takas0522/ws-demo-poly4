@@ -6,7 +6,6 @@ from app.core.logger import logger
 from app.routes.configuration_routes import router as config_router
 from app.routes.service_routes import router as service_router
 from app.repositories.cosmos_client import cosmos_client
-from app.repositories.cache_service import cache_service
 
 
 @asynccontextmanager
@@ -22,7 +21,6 @@ async def lifespan(app: FastAPI):
             logger.warning("❌ Warning: CosmosDB connection failed")
             logger.warning("   Please ensure CosmosDB Emulator is running")
 
-        await cache_service.connect()
         logger.info("Service initialization complete")
     except Exception as e:
         logger.error(f"Failed to initialize service: {e}")
@@ -32,7 +30,6 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down Service Settings Service...")
-    await cache_service.disconnect()
     logger.info("Service shutdown complete")
 
 
