@@ -1,9 +1,12 @@
 import logging
-from app.core.config import settings
+import os
+
+# Get log level from environment variable, default to INFO
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
 # Configure logging
 logging.basicConfig(
-    level=getattr(logging, settings.LOG_LEVEL),
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
