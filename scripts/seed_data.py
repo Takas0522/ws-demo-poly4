@@ -12,7 +12,7 @@ from azure.cosmos.exceptions import CosmosResourceExistsError
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from app.core.config import settings
+from app.core.config import settings  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -93,7 +93,7 @@ def seed_services() -> None:
                 logger.info(f"- Service already exists: {service['id']}")
                 skipped_count += 1
 
-        logger.info(f"\nSeed data completed:")
+        logger.info("\nSeed data completed:")
         logger.info(f"  Inserted: {inserted_count} services")
         logger.info(f"  Skipped: {skipped_count} services (already exist)")
 
