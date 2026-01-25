@@ -1,16 +1,17 @@
 """ServiceRole data model."""
+
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ServiceRole(BaseModel):
     """
     ServiceRole model representing a role within a service.
-    
+
     This model is used for caching role information from services.
-    
+
     Attributes:
         id: Record ID (UUID)
         serviceId: Service ID
@@ -18,7 +19,7 @@ class ServiceRole(BaseModel):
         description: Role description (optional)
         lastSyncedAt: Last synchronization timestamp (optional)
     """
-    
+
     id: str = Field(..., description="Record ID (UUID)")
     serviceId: str = Field(..., description="Service ID")
     roleName: str = Field(..., description="Role name")
@@ -26,11 +27,9 @@ class ServiceRole(BaseModel):
     lastSyncedAt: Optional[datetime] = Field(
         None, description="Last synchronization timestamp"
     )
-    
-    class Config:
-        """Pydantic model configuration."""
-        
-        json_schema_extra = {
+
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "sr-001",
                 "serviceId": "file-management",
@@ -39,3 +38,4 @@ class ServiceRole(BaseModel):
                 "lastSyncedAt": "2026-01-15T10:00:00Z",
             }
         }
+    )

@@ -1,13 +1,14 @@
 """TenantServiceAssignment data model."""
+
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TenantServiceAssignment(BaseModel):
     """
     TenantServiceAssignment model representing service assignment to a tenant.
-    
+
     Attributes:
         id: Record ID (UUID)
         tenantId: Tenant ID
@@ -15,17 +16,15 @@ class TenantServiceAssignment(BaseModel):
         assignedAt: Assignment timestamp
         assignedBy: User ID who performed the assignment
     """
-    
+
     id: str = Field(..., description="Record ID (UUID)")
     tenantId: str = Field(..., description="Tenant ID")
     serviceId: str = Field(..., description="Service ID")
     assignedAt: datetime = Field(..., description="Assignment timestamp")
     assignedBy: str = Field(..., description="User ID who performed the assignment")
-    
-    class Config:
-        """Pydantic model configuration."""
-        
-        json_schema_extra = {
+
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "id": "tsa-001",
                 "tenantId": "tenant-002",
@@ -34,3 +33,4 @@ class TenantServiceAssignment(BaseModel):
                 "assignedBy": "user-001",
             }
         }
+    )

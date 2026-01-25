@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Script to seed initial data for Service Setting Service."""
+
 import logging
 import os
 import sys

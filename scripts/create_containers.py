@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Script to create Cosmos DB containers for Service Setting Service."""
+
 import logging
 import os
 import sys
