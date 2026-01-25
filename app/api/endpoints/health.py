@@ -1,5 +1,5 @@
 """Health check API endpoints."""
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict
 
 from fastapi import APIRouter, status
@@ -41,7 +41,7 @@ async def health_check() -> Dict:
         "service": settings.app_name,
         "version": settings.app_version,
         "environment": settings.app_env,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "dependencies": {
             "cosmosdb": {
                 "status": "healthy" if db_healthy else "unhealthy",
