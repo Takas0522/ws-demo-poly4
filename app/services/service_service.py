@@ -36,7 +36,12 @@ class ServiceService:
         try:
             container = self.db_client.services_container
             query = "SELECT * FROM c ORDER BY c.name"
-            items = list(container.query_items(query=query, enable_cross_partition_query=True))
+            items = list(
+                container.query_items(
+                    query=query,
+                    enable_cross_partition_query=True,
+                )
+            )
 
             services = [Service(**item) for item in items]
             logger.info(f"Retrieved {len(services)} services")
@@ -112,11 +117,15 @@ class ServiceService:
                     )
                 except CosmosResourceNotFoundError:
                     logger.warning(
-                        f"Service {service_id} not found for assignment {assignment['id']}"
+                        f"Service {service_id} not found for "
+                        f"assignment {assignment['id']}"
                     )
                     continue
 
-            logger.info(f"Retrieved {len(tenant_services)} services for tenant {tenant_id}")
+            logger.info(
+                f"Retrieved {len(tenant_services)} services for "
+                f"tenant {tenant_id}"
+            )
             return tenant_services
 
         except Exception as e:
@@ -191,11 +200,13 @@ class ServiceService:
                 )
                 assignments_container.create_item(body=assignment.model_dump())
                 logger.info(
-                    f"Created assignment for service {service_id} to tenant {tenant_id}"
+                    f"Created assignment for service {service_id} "
+                    f"to tenant {tenant_id}"
                 )
 
             logger.info(
-                f"Updated tenant {tenant_id} services: added {len(to_add)}, removed {len(to_remove)}"
+                f"Updated tenant {tenant_id} services: "
+                f"added {len(to_add)}, removed {len(to_remove)}"
             )
             return service_ids
 

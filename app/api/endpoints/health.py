@@ -1,4 +1,5 @@
 """Health check API endpoints."""
+
 from datetime import datetime, timezone
 from typing import Dict
 
@@ -21,21 +22,21 @@ router = APIRouter()
 async def health_check() -> Dict:
     """
     Health check endpoint.
-    
+
     Returns service status and dependency health information.
-    
+
     Returns:
-        Dict: Health status information including service name, version, 
+        Dict: Health status information including service name, version,
               timestamp, and dependency statuses
     """
     db_client = get_db_client()
-    
+
     # Check database connection
     db_healthy = await db_client.health_check()
-    
+
     # Determine overall status
     overall_status = "healthy" if db_healthy else "degraded"
-    
+
     return {
         "status": overall_status,
         "service": settings.app_name,

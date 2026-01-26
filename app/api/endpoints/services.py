@@ -1,7 +1,6 @@
 """Services API endpoints."""
 
 import logging
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -33,7 +32,10 @@ def get_service_service() -> ServiceService:
     response_model=ServiceListResponse,
     status_code=status.HTTP_200_OK,
     summary="Get all services",
-    description="Retrieve a list of all available services. Requires viewer role or higher.",
+    description=(
+        "Retrieve a list of all available services. "
+        "Requires viewer role or higher."
+    ),
 )
 async def get_services(
     current_user: CurrentUser = Depends(require_viewer),
@@ -81,7 +83,10 @@ async def get_services(
     response_model=TenantServiceListResponse,
     status_code=status.HTTP_200_OK,
     summary="Get tenant assigned services",
-    description="Retrieve all services assigned to a specific tenant. Requires viewer role or higher.",
+    description=(
+        "Retrieve all services assigned to a specific tenant. "
+        "Requires viewer role or higher."
+    ),
 )
 async def get_tenant_services(
     tenant_id: str,
@@ -112,7 +117,8 @@ async def get_tenant_services(
         ]
 
         logger.info(
-            f"User {current_user.user_id} retrieved {len(tenant_services)} services for tenant {tenant_id}"
+            f"User {current_user.user_id} retrieved "
+            f"{len(tenant_services)} services for tenant {tenant_id}"
         )
         return TenantServiceListResponse(data=service_responses)
 
@@ -129,7 +135,10 @@ async def get_tenant_services(
     response_model=UpdateTenantServicesResponse,
     status_code=status.HTTP_200_OK,
     summary="Update tenant service assignments",
-    description="Update the list of services assigned to a tenant. Requires global admin role.",
+    description=(
+        "Update the list of services assigned to a tenant. "
+        "Requires global admin role."
+    ),
 )
 async def update_tenant_services(
     tenant_id: str,
@@ -162,7 +171,8 @@ async def update_tenant_services(
         )
 
         logger.info(
-            f"User {current_user.user_id} updated services for tenant {tenant_id}: {assigned_services}"
+            f"User {current_user.user_id} updated services for "
+            f"tenant {tenant_id}: {assigned_services}"
         )
 
         return UpdateTenantServicesResponse(

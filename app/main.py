@@ -1,4 +1,5 @@
 """FastAPI application initialization and configuration."""
+
 import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -23,19 +24,19 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI) -> AsyncGenerator:
     """
     Application lifespan manager.
-    
+
     Handles startup and shutdown events for the FastAPI application.
-    
+
     Args:
         app: FastAPI application instance
-        
+
     Yields:
         None during application runtime
     """
     # Startup
     logger.info(f"Starting {settings.app_name} v{settings.app_version}")
     logger.info(f"Environment: {settings.app_env}")
-    
+
     try:
         # Connect to Cosmos DB
         db_client.connect()
@@ -43,9 +44,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     except Exception as e:
         logger.error(f"Failed to connect to database: {e}")
         # Don't fail startup - allow health check to report degraded state
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down application")
     try:
@@ -91,7 +92,7 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     uvicorn.run(
         "app.main:app",
         host=settings.host,

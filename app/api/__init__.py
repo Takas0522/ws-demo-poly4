@@ -1,4 +1,5 @@
 """API router initialization."""
+
 from fastapi import APIRouter
 
 from app.api.endpoints import health, services

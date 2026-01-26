@@ -1,8 +1,9 @@
 """Cosmos DB database connection and management."""
+
 import logging
 from typing import Optional
 
-from azure.cosmos import CosmosClient, DatabaseProxy, ContainerProxy
+from azure.cosmos import ContainerProxy, CosmosClient, DatabaseProxy
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
 
 from app.core.config import settings
@@ -23,9 +24,7 @@ class CosmosDBClient:
     def connect(self) -> None:
         """Establish connection to Cosmos DB."""
         try:
-            logger.info(
-                f"Connecting to Cosmos DB at {settings.cosmosdb_endpoint}"
-            )
+            logger.info(f"Connecting to Cosmos DB at {settings.cosmosdb_endpoint}")
             self._client = CosmosClient(
                 url=settings.cosmosdb_endpoint,
                 credential=settings.cosmosdb_key,
@@ -33,9 +32,7 @@ class CosmosDBClient:
             self._database = self._client.get_database_client(
                 settings.cosmosdb_database
             )
-            logger.info(
-                f"Connected to database: {settings.cosmosdb_database}"
-            )
+            logger.info(f"Connected to database: {settings.cosmosdb_database}")
         except Exception as e:
             logger.error(f"Failed to connect to Cosmos DB: {e}")
             raise
@@ -71,10 +68,8 @@ class CosmosDBClient:
                 raise RuntimeError(
                     "Database connection not established. Call connect() first."
                 )
-            self._service_assignments_container = (
-                self._database.get_container_client(
-                    settings.cosmosdb_service_assignments_container
-                )
+            self._service_assignments_container = self._database.get_container_client(
+                settings.cosmosdb_service_assignments_container
             )
         return self._service_assignments_container
 

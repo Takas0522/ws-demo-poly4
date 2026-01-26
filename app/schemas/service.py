@@ -54,7 +54,5 @@ class UpdateTenantServicesResponse(BaseModel):
     """Response schema for updating tenant service assignments."""
 
     tenantId: str = Field(..., description="Tenant ID")
-    assignedServices: List[str] = Field(
-        ..., description="List of assigned service IDs"
-    )
+    assignedServices: List[str] = Field(..., description="List of assigned service IDs")
     message: str = Field(..., description="Success message")
