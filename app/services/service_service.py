@@ -199,15 +199,20 @@ class ServiceService:
             # Remove old assignments
             for item in existing_items:
                 if item["serviceId"] in to_remove:
-                    assignments_container.delete_item(
-                        item=item["id"], partition_key=item["id"]
-                    )
-                    logger.info(
-                        f"Removed assignment {item['id']} for tenant {tenant_id}"
-                    )
+                    try:
+                        assignments_container.delete_item(
+                            item=item["id"], partition_key=item["id"]
+                        )
+                        logger.info(
+                            f"Removed assignment {item['id']} for tenant {tenant_id}"
+                        )
+                    except CosmosResourceNotFoundError:
+                        logger.warning(
+                            f"Assignment {item['id']} already deleted, skipping"
+                        )
 
             # Add new assignments
-            now = format_datetime_utc(datetime.now(timezone.utc))
+            now = datetime.now(timezone.utc)
             for service_id in to_add:
                 assignment = TenantServiceAssignment(
                     id=str(uuid4()),
@@ -216,7 +221,7 @@ class ServiceService:
                     assignedAt=now,
                     assignedBy=user_id,
                 )
-                assignments_container.create_item(body=assignment.model_dump())
+                assignments_container.create_item(body=assignment.model_dump(mode='json'))
                 logger.info(
                     f"Created assignment for service {service_id} "
                     f"to tenant {tenant_id}"
