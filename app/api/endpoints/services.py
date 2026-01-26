@@ -33,8 +33,7 @@ def get_service_service() -> ServiceService:
     status_code=status.HTTP_200_OK,
     summary="Get all services",
     description=(
-        "Retrieve a list of all available services. "
-        "Requires viewer role or higher."
+        "Retrieve a list of all available services. " "Requires viewer role or higher."
     ),
 )
 async def get_services(

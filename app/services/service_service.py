@@ -14,6 +14,21 @@ from app.models.tenant_service_assignment import TenantServiceAssignment
 logger = logging.getLogger(__name__)
 
 
+def format_datetime_utc(dt: datetime) -> str:
+    """
+    Format datetime as ISO 8601 string with UTC timezone.
+
+    Args:
+        dt: Datetime object to format
+
+    Returns:
+        ISO 8601 formatted string with 'Z' suffix for UTC
+    """
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 class ServiceService:
     """Service for managing services and service assignments."""
 
@@ -86,10 +101,12 @@ class ServiceService:
         try:
             # Get assignments for the tenant
             assignments_container = self.db_client.service_assignments_container
-            assignments_query = f"SELECT * FROM c WHERE c.tenantId = '{tenant_id}'"
+            assignments_query = "SELECT * FROM c WHERE c.tenantId = @tenantId"
             assignment_items = list(
                 assignments_container.query_items(
-                    query=assignments_query, enable_cross_partition_query=True
+                    query=assignments_query,
+                    parameters=[{"name": "@tenantId", "value": tenant_id}],
+                    enable_cross_partition_query=True,
                 )
             )
 
@@ -123,8 +140,7 @@ class ServiceService:
                     continue
 
             logger.info(
-                f"Retrieved {len(tenant_services)} services for "
-                f"tenant {tenant_id}"
+                f"Retrieved {len(tenant_services)} services for " f"tenant {tenant_id}"
             )
             return tenant_services
 
@@ -164,10 +180,12 @@ class ServiceService:
 
             # Get existing assignments
             assignments_container = self.db_client.service_assignments_container
-            existing_query = f"SELECT * FROM c WHERE c.tenantId = '{tenant_id}'"
+            existing_query = "SELECT * FROM c WHERE c.tenantId = @tenantId"
             existing_items = list(
                 assignments_container.query_items(
-                    query=existing_query, enable_cross_partition_query=True
+                    query=existing_query,
+                    parameters=[{"name": "@tenantId", "value": tenant_id}],
+                    enable_cross_partition_query=True,
                 )
             )
 
@@ -189,7 +207,7 @@ class ServiceService:
                     )
 
             # Add new assignments
-            now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+            now = format_datetime_utc(datetime.now(timezone.utc))
             for service_id in to_add:
                 assignment = TenantServiceAssignment(
                     id=str(uuid4()),
