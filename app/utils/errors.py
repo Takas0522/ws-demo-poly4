@@ -133,5 +133,5 @@ class ServiceSettingException(HTTPException):
         
         super().__init__(
             status_code=status_code,
-            detail=error_response.model_dump()
+            detail=error_response.model_dump(mode='json')
         )

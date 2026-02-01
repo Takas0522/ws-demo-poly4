@@ -11,6 +11,7 @@ class ServiceAssignmentCreate(BaseModel):
     
     service_id: str = Field(
         ...,
+        alias="serviceId",
         description="サービスID（最大100文字）",
         pattern="^[a-z0-9-]+$",
         max_length=100
@@ -19,6 +20,19 @@ class ServiceAssignmentCreate(BaseModel):
         None,
         description="サービス固有設定（オプショナル、最大10KB）"
     )
+    
+    model_config = {
+        "populate_by_name": True,
+        "json_schema_extra": {
+            "example": {
+                "serviceId": "messaging-service",
+                "config": {
+                    "max_channels": 50,
+                    "max_members_per_channel": 100
+                }
+            }
+        }
+    }
     
     @field_validator('config')
     @classmethod
@@ -66,17 +80,6 @@ class ServiceAssignmentCreate(BaseModel):
         check_control_chars(v)
         
         return v
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "service_id": "messaging-service",
-                "config": {
-                    "max_channels": 50,
-                    "max_members_per_channel": 100
-                }
-            }
-        }
 
 
 class ServiceAssignmentResponse(BaseModel):
