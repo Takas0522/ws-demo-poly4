@@ -1,8 +1,13 @@
 """pytest共通フィクスチャ"""
+import os
 import pytest
 from unittest.mock import Mock, AsyncMock, MagicMock
 from datetime import datetime
 from typing import Dict, Any
+
+# テスト用環境変数設定
+os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-for-testing-only-do-not-use-in-production")
+os.environ.setdefault("ENVIRONMENT", "test")
 
 
 class AsyncIteratorMock:
@@ -70,19 +75,69 @@ def mock_cosmos_container():
                     continue
                 # Apply basic filtering based on query
                 if "type = 'service'" in query and item.get('type') == 'service':
-                    if "is_active = true" in query and item.get('is_active') == True:
+                    if "is_active = true" in query.lower() and item.get('is_active') == True:
                         count += 1
-                    elif "is_active" not in query:
+                    elif "is_active" not in query.lower():
                         count += 1
                 elif "type = 'service_assignment'" in query and item.get('type') == 'service_assignment':
                     count += 1
             return AsyncIteratorMock([count])
         
         # Regular query - return full items
+        # Parse parameters if provided
+        param_dict = {}
+        if parameters:
+            for param in parameters:
+                param_dict[param.get('name', '')] = param.get('value', '')
+        
         for key, item in storage.items():
-            if partition_key and item.get('tenant_id') != partition_key:
+            # Skip items not matching partition_key if specified and not cross-partition query
+            if partition_key and not enable_cross_partition_query and item.get('tenant_id') != partition_key:
                 continue
-            items.append(item)
+            
+            # Apply filtering based on query and parameters
+            include_item = True
+            
+            # Check type filter
+            if "type = 'service'" in query and item.get('type') != 'service':
+                include_item = False
+            elif "type = 'service_assignment'" in query and item.get('type') != 'service_assignment':
+                include_item = False
+            
+            # Check tenant_id != '_system' filter
+            if include_item and "tenant_id != '_system'" in query:
+                if item.get('tenant_id') == '_system':
+                    include_item = False
+            
+            # Check is_active filter
+            if include_item and "is_active" in query.lower():
+                if "@is_active" in param_dict:
+                    expected_active = param_dict["@is_active"]
+                    if item.get('is_active') != expected_active:
+                        include_item = False
+                elif "is_active = true" in query.lower():
+                    if item.get('is_active') != True:
+                        include_item = False
+                elif "is_active = false" in query.lower():
+                    if item.get('is_active') != False:
+                        include_item = False
+            
+            # Check tenant_id from parameters
+            if include_item and "@tenant_id" in param_dict:
+                expected_tenant = param_dict["@tenant_id"]
+                # Skip _system check if query has "!= '_system'"
+                if "tenant_id != '_system'" not in query and item.get('tenant_id') != expected_tenant:
+                    include_item = False
+            
+            # Check service_id from parameters
+            if include_item and "@service_id" in param_dict:
+                expected_service = param_dict["@service_id"]
+                if item.get('service_id') != expected_service:
+                    include_item = False
+            
+            if include_item:
+                items.append(item)
+        
         return AsyncIteratorMock(items)
     
     container.read_item = mock_read_item
@@ -98,12 +153,38 @@ def mock_cosmos_container():
 @pytest.fixture
 def mock_tenant_client():
     """TenantClientモック"""
-    client = AsyncMock()
+    from app.services.tenant_client import TenantClient
+    client = AsyncMock(spec=TenantClient)
     
     # デフォルトでテナント存在確認は成功
     client.verify_tenant_exists.return_value = True
     
     return client
+
+
+@pytest.fixture
+def test_client_with_mocks(mock_cosmos_container, mock_tenant_client):
+    """
+    FastAPI TestClient with mocked dependencies
+    Used for testing API endpoints with full dependency injection mocking
+    """
+    from app.main import app
+    from app.dependencies import get_cosmos_container
+    from app.services.tenant_client import TenantClient
+    from fastapi.testclient import TestClient
+    from unittest.mock import patch
+    
+    # Override dependencies
+    app.dependency_overrides[get_cosmos_container] = lambda: mock_cosmos_container
+    
+    # Patch TenantClient constructor to return mock
+    with patch('app.services.tenant_client.TenantClient', return_value=mock_tenant_client):
+        with patch('app.api.service_assignments.TenantClient', return_value=mock_tenant_client):
+            client = TestClient(app)
+            yield client
+    
+    # Cleanup
+    app.dependency_overrides = {}
 
 
 @pytest.fixture

@@ -42,21 +42,21 @@ class Test正常系:
     async def test_should_return_none_when_service_not_found(self, service_service, mock_service_repository):
         """ST_SS002: get_service: 存在しないサービスでNone"""
         # Arrange
-        mock_service_repository.get.return_value = None
+        mock_service_repository.get_service.return_value = None
         
         # Act
         result = await service_service.get_service("nonexistent-service")
         
         # Assert
         assert result is None
-        mock_service_repository.get.assert_called_once_with("nonexistent-service")
+        mock_service_repository.get_service.assert_called_once_with("nonexistent-service")
     
     @pytest.mark.asyncio
     async def test_should_list_active_services(self, service_service, mock_service_repository, test_service_file):
         """ST_SS003: list_services: is_active=Trueでアクティブのみ"""
         # Arrange
         service = Service(**test_service_file)
-        mock_service_repository.list_services.return_value = [service]
+        mock_service_repository.list_all.return_value = [service]
         
         # Act
         result = await service_service.list_services(is_active=True)
@@ -64,14 +64,14 @@ class Test正常系:
         # Assert
         assert len(result) == 1
         assert result[0].is_active is True
-        mock_service_repository.list_services.assert_called_once_with(is_active=True)
+        mock_service_repository.list_all.assert_called_once_with(is_active=True)
     
     @pytest.mark.asyncio
     async def test_should_list_inactive_services(self, service_service, mock_service_repository, test_service_inactive):
         """ST_SS004: list_services: is_active=Falseで非アクティブのみ"""
         # Arrange
         service = Service(**test_service_inactive)
-        mock_service_repository.list_services.return_value = [service]
+        mock_service_repository.list_all.return_value = [service]
         
         # Act
         result = await service_service.list_services(is_active=False)
@@ -79,22 +79,22 @@ class Test正常系:
         # Assert
         assert len(result) == 1
         assert result[0].is_active is False
-        mock_service_repository.list_services.assert_called_once_with(is_active=False)
+        mock_service_repository.list_all.assert_called_once_with(is_active=False)
     
     @pytest.mark.asyncio
     async def test_should_create_service(self, service_service, mock_service_repository, test_service_file):
         """ST_SS005: create_service: サービス作成成功"""
         # Arrange
         service = Service(**test_service_file)
-        mock_service_repository.get.return_value = None
-        mock_service_repository.create.return_value = service
+        mock_service_repository.get_service.return_value = None
+        mock_service_repository.create_service.return_value = service
         
         # Act
-        result = await service_service.create_service(service)
+        result = await service_service.create_service(service, created_by="user_admin_001")
         
         # Assert
         assert result.id == "file-service"
-        mock_service_repository.create.assert_called_once()
+        mock_service_repository.create_service.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_should_count_active_services(self, service_service, mock_service_repository):
@@ -118,9 +118,9 @@ class Test異常系:
         """ST_SS006: create_service: 重複IDでValueError"""
         # Arrange
         service = Service(**test_service_file)
-        mock_service_repository.get.return_value = service  # 既に存在する
+        mock_service_repository.get_service.return_value = service  # 既に存在する
         
         # Act & Assert
         with pytest.raises(ValueError) as exc_info:
-            await service_service.create_service(service)
+            await service_service.create_service(service, created_by="user_admin_001")
         assert "already exists" in str(exc_info.value)

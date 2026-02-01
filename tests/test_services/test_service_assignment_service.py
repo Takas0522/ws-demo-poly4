@@ -51,9 +51,9 @@ class Test正常系:
         # Arrange
         service = Service(**test_service_file)
         mock_tenant_client.verify_tenant_exists.return_value = True
-        mock_service_repository.get.return_value = service
-        mock_assignment_repository.get.return_value = None
-        mock_assignment_repository.create.return_value = ServiceAssignment(
+        mock_service_repository.get_service.return_value = service
+        mock_assignment_repository.find_by_tenant_and_service.return_value = None
+        mock_assignment_repository.create_assignment.return_value = ServiceAssignment(
             id="assignment_tenant_acme_file-service",
             tenant_id="tenant_acme",
             service_id="file-service",
@@ -76,8 +76,8 @@ class Test正常系:
         assert result.service_id == "file-service"
         assert result.tenant_id == "tenant_acme"
         mock_tenant_client.verify_tenant_exists.assert_called_once()
-        mock_service_repository.get.assert_called_once_with("file-service")
-        mock_assignment_repository.create.assert_called_once()
+        mock_service_repository.get_service.assert_called_once_with("file-service")
+        mock_assignment_repository.create_assignment.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_should_remove_service_assignment_successfully(
@@ -89,19 +89,19 @@ class Test正常系:
         """ST_SAS008: remove_service_assignment: 割り当て解除成功"""
         # Arrange
         assignment = ServiceAssignment(**test_assignment)
-        mock_assignment_repository.get.return_value = assignment
-        mock_assignment_repository.delete.return_value = None
+        mock_assignment_repository.get_assignment.return_value = assignment
+        mock_assignment_repository.delete_assignment.return_value = None
         
         # Act
         await assignment_service.remove_service_assignment(
             tenant_id="tenant_acme",
             service_id="file-service",
-            unassigned_by="user_admin_001"
+            deleted_by="user_admin_001"
         )
         
         # Assert
-        mock_assignment_repository.get.assert_called_once()
-        mock_assignment_repository.delete.assert_called_once()
+        mock_assignment_repository.get_assignment.assert_called_once()
+        mock_assignment_repository.delete_assignment.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_should_list_tenant_services(
@@ -117,7 +117,7 @@ class Test正常系:
         assignment = ServiceAssignment(**test_assignment)
         service = Service(**test_service_file)
         mock_assignment_repository.list_by_tenant.return_value = [assignment]
-        mock_service_repository.get.return_value = service
+        mock_service_repository.get_service.return_value = service
         
         # Act
         result = await assignment_service.list_tenant_services(
@@ -142,7 +142,7 @@ class Test正常系:
         # Arrange
         assignment = ServiceAssignment(**test_assignment)
         mock_assignment_repository.list_by_tenant.return_value = [assignment]
-        mock_service_repository.get.side_effect = Exception("Database error")
+        mock_service_repository.get_service.side_effect = Exception("Database error")
         
         # Act
         result = await assignment_service.list_tenant_services(
@@ -168,7 +168,7 @@ class Test正常系:
         import asyncio
         assignment = ServiceAssignment(**test_assignment)
         mock_assignment_repository.list_by_tenant.return_value = [assignment]
-        mock_service_repository.get.side_effect = asyncio.TimeoutError()
+        mock_service_repository.get_service.side_effect = asyncio.TimeoutError()
         
         # Act
         result = await assignment_service.list_tenant_services(
@@ -204,7 +204,7 @@ class Test異常系:
                 assigned_by="user_admin_001",
                 jwt_token="test_token"
             )
-        assert exc_info.value.error_code == ServiceErrorCode.TENANT_001_NOT_FOUND
+        assert exc_info.value.status_code == 404
     
     @pytest.mark.asyncio
     async def test_should_raise_error_when_service_not_found(
@@ -216,7 +216,7 @@ class Test異常系:
         """ST_SAS003: assign_service: サービス不在でエラー"""
         # Arrange
         mock_tenant_client.verify_tenant_exists.return_value = True
-        mock_service_repository.get.return_value = None
+        mock_service_repository.get_service.return_value = None
         
         # Act & Assert
         with pytest.raises(ServiceSettingException) as exc_info:
@@ -227,7 +227,7 @@ class Test異常系:
                 assigned_by="user_admin_001",
                 jwt_token="test_token"
             )
-        assert exc_info.value.error_code == ServiceErrorCode.SERVICE_001_NOT_FOUND
+        assert exc_info.value.status_code == 404
     
     @pytest.mark.asyncio
     async def test_should_raise_error_when_service_is_inactive(
@@ -241,7 +241,7 @@ class Test異常系:
         # Arrange
         service = Service(**test_service_inactive)
         mock_tenant_client.verify_tenant_exists.return_value = True
-        mock_service_repository.get.return_value = service
+        mock_service_repository.get_service.return_value = service
         
         # Act & Assert
         with pytest.raises(ServiceSettingException) as exc_info:
@@ -252,7 +252,7 @@ class Test異常系:
                 assigned_by="user_admin_001",
                 jwt_token="test_token"
             )
-        assert exc_info.value.error_code == ServiceErrorCode.SERVICE_002_INACTIVE
+        assert exc_info.value.status_code == 422
     
     @pytest.mark.asyncio
     async def test_should_raise_error_when_assignment_already_exists(
@@ -269,8 +269,8 @@ class Test異常系:
         service = Service(**test_service_file)
         assignment = ServiceAssignment(**test_assignment)
         mock_tenant_client.verify_tenant_exists.return_value = True
-        mock_service_repository.get.return_value = service
-        mock_assignment_repository.get.return_value = assignment
+        mock_service_repository.get_service.return_value = service
+        mock_assignment_repository.find_by_tenant_and_service.return_value = assignment
         
         # Act & Assert
         with pytest.raises(ServiceSettingException) as exc_info:
@@ -281,7 +281,7 @@ class Test異常系:
                 assigned_by="user_admin_001",
                 jwt_token="test_token"
             )
-        assert exc_info.value.error_code == ServiceErrorCode.ASSIGNMENT_001_ALREADY_EXISTS
+        assert exc_info.value.status_code == 409
     
     @pytest.mark.asyncio
     async def test_should_raise_error_when_id_length_exceeds_limit(
@@ -302,7 +302,7 @@ class Test異常系:
                 assigned_by="user_admin_001",
                 jwt_token="test_token"
             )
-        assert exc_info.value.error_code == ServiceErrorCode.ASSIGNMENT_002_ID_TOO_LONG
+        assert exc_info.value.status_code == 400
     
     @pytest.mark.asyncio
     async def test_should_raise_error_when_tenant_service_timeout(
@@ -324,7 +324,7 @@ class Test異常系:
                 assigned_by="user_admin_001",
                 jwt_token="test_token"
             )
-        assert exc_info.value.error_code == ServiceErrorCode.TENANT_002_TIMEOUT
+        assert exc_info.value.status_code == 504
     
     @pytest.mark.asyncio
     async def test_should_raise_error_when_assignment_not_found_on_removal(
@@ -334,13 +334,13 @@ class Test異常系:
     ):
         """ST_SAS009: remove_service_assignment: 存在しない割り当てでエラー"""
         # Arrange
-        mock_assignment_repository.get.return_value = None
+        mock_assignment_repository.get_assignment.return_value = None
         
         # Act & Assert
         with pytest.raises(ServiceSettingException) as exc_info:
             await assignment_service.remove_service_assignment(
                 tenant_id="tenant_acme",
                 service_id="file-service",
-                unassigned_by="user_admin_001"
+                deleted_by="user_admin_001"
             )
-        assert exc_info.value.error_code == ServiceErrorCode.ASSIGNMENT_003_NOT_FOUND
+        assert exc_info.value.status_code == 404

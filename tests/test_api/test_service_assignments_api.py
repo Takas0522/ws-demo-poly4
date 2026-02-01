@@ -22,12 +22,37 @@ def mock_service_service():
 
 
 @pytest.fixture
-def test_client_assignments(mock_cosmos_container):
+def test_client_assignments(mock_cosmos_container, mock_tenant_client):
     """FastAPI TestClient（サービス割り当てAPI用）"""
-    app.dependency_overrides[get_cosmos_container] = lambda: mock_cosmos_container
-    client = TestClient(app)
-    yield client
-    app.dependency_overrides = {}
+    from fastapi.testclient import TestClient
+    from app.main import app as fastapi_app
+    from app.dependencies import get_cosmos_container
+    from unittest.mock import patch
+    
+    # Patch TenantClient to return mock
+    with patch('app.services.tenant_client.TenantClient', return_value=mock_tenant_client):
+        with patch('app.api.service_assignments.TenantClient', return_value=mock_tenant_client):
+            fastapi_app.dependency_overrides[get_cosmos_container] = lambda: mock_cosmos_container
+            client = TestClient(fastapi_app)
+            yield client
+            fastapi_app.dependency_overrides = {}
+
+
+@pytest.fixture
+def test_client_assignments_with_mocks(mock_cosmos_container, mock_tenant_client):
+    """FastAPI TestClient（サービス割り当てAPI用）with mocks"""
+    from fastapi.testclient import TestClient
+    from app.main import app as fastapi_app
+    from app.dependencies import get_cosmos_container
+    from unittest.mock import patch
+    
+    # Patch TenantClient to return mock
+    with patch('app.services.tenant_client.TenantClient', return_value=mock_tenant_client):
+        with patch('app.api.service_assignments.TenantClient', return_value=mock_tenant_client):
+            fastapi_app.dependency_overrides[get_cosmos_container] = lambda: mock_cosmos_container
+            client = TestClient(fastapi_app)
+            yield client, mock_tenant_client, mock_cosmos_container
+            fastapi_app.dependency_overrides = {}
 
 
 class Test正常系:
@@ -76,17 +101,18 @@ class Test正常系:
     
     def test_should_assign_service_successfully(
         self,
-        test_client_assignments,
-        mock_assignment_service,
-        mock_service_service,
+        test_client_assignments_with_mocks,
         test_assignment,
         test_service_file
     ):
         """AT_SA004: POST /tenants/{tenant_id}/services: サービス割り当て成功"""
         # Arrange
-        from app.models.service_assignment import ServiceAssignment
-        assignment = ServiceAssignment(**test_assignment)
-        mock_assignment_service.assign_service.return_value = assignment
+        test_client, mock_tenant_client, mock_cosmos_container = test_client_assignments_with_mocks
+        from app.models.service import Service
+        service = Service(**test_service_file)
+        import asyncio
+        asyncio.run(mock_cosmos_container.create_item(service.model_dump()))
+        mock_tenant_client.verify_tenant_exists.return_value = True
         
         request_body = {
             "serviceId": "file-service",
@@ -94,7 +120,7 @@ class Test正常系:
         }
         
         # Act
-        response = test_client_assignments.post(
+        response = test_client.post(
             "/api/v1/tenants/tenant_acme/services",
             json=request_body
         )
@@ -105,11 +131,17 @@ class Test正常系:
     def test_should_remove_service_assignment_successfully(
         self,
         test_client_assignments,
-        mock_assignment_service
+        mock_assignment_service,
+        test_assignment,
+        mock_cosmos_container
     ):
         """AT_SA010: DELETE /tenants/{tenant_id}/services/{service_id}: 削除成功"""
         # Arrange
-        mock_assignment_service.remove_service_assignment.return_value = None
+        from app.models.service_assignment import ServiceAssignment
+        assignment = ServiceAssignment(**test_assignment)
+        # Prepare assignment data in mock container
+        import asyncio
+        asyncio.run(mock_cosmos_container.create_item(assignment.model_dump()))
         
         # Act
         response = test_client_assignments.delete("/api/v1/tenants/tenant_acme/services/file-service")
@@ -158,17 +190,17 @@ class Test異常系:
     
     def test_should_return_404_when_tenant_not_found(
         self,
-        test_client_assignments,
-        mock_assignment_service
+        test_client_assignments_with_mocks,
+        test_service_file
     ):
         """AT_SA006: POST /tenants/{tenant_id}/services: テナント不在で404"""
         # Arrange
-        from app.utils.errors import ServiceSettingException, ServiceErrorCode
-        mock_assignment_service.assign_service.side_effect = ServiceSettingException(
-            error_code=ServiceErrorCode.TENANT_001_NOT_FOUND,
-            message="Tenant not found",
-            status_code=404
-        )
+        test_client, mock_tenant_client, mock_cosmos_container = test_client_assignments_with_mocks
+        from app.models.service import Service
+        service = Service(**test_service_file)
+        import asyncio
+        asyncio.run(mock_cosmos_container.create_item(service.model_dump()))
+        mock_tenant_client.verify_tenant_exists.return_value = False
         
         request_body = {
             "serviceId": "file-service",
@@ -176,7 +208,7 @@ class Test異常系:
         }
         
         # Act
-        response = test_client_assignments.post(
+        response = test_client.post(
             "/api/v1/tenants/tenant_nonexistent/services",
             json=request_body
         )
@@ -186,17 +218,13 @@ class Test異常系:
     
     def test_should_return_404_when_service_not_found(
         self,
-        test_client_assignments,
-        mock_assignment_service
+        test_client_assignments_with_mocks
     ):
         """AT_SA007: POST /tenants/{tenant_id}/services: サービス不在で404"""
         # Arrange
-        from app.utils.errors import ServiceSettingException, ServiceErrorCode
-        mock_assignment_service.assign_service.side_effect = ServiceSettingException(
-            error_code=ServiceErrorCode.SERVICE_001_NOT_FOUND,
-            message="Service not found",
-            status_code=404
-        )
+        test_client, mock_tenant_client, mock_cosmos_container = test_client_assignments_with_mocks
+        mock_tenant_client.verify_tenant_exists.return_value = True
+        # Don't add service to cosmos - it should not exist
         
         request_body = {
             "serviceId": "nonexistent-service",
@@ -204,7 +232,7 @@ class Test異常系:
         }
         
         # Act
-        response = test_client_assignments.post(
+        response = test_client.post(
             "/api/v1/tenants/tenant_acme/services",
             json=request_body
         )
@@ -214,17 +242,21 @@ class Test異常系:
     
     def test_should_return_409_when_assignment_already_exists(
         self,
-        test_client_assignments,
-        mock_assignment_service
+        test_client_assignments_with_mocks,
+        test_service_file,
+        test_assignment
     ):
         """AT_SA008: POST /tenants/{tenant_id}/services: 重複割り当てで409"""
         # Arrange
-        from app.utils.errors import ServiceSettingException, ServiceErrorCode
-        mock_assignment_service.assign_service.side_effect = ServiceSettingException(
-            error_code=ServiceErrorCode.ASSIGNMENT_001_ALREADY_EXISTS,
-            message="Assignment already exists",
-            status_code=409
-        )
+        test_client, mock_tenant_client, mock_cosmos_container = test_client_assignments_with_mocks
+        from app.models.service import Service
+        from app.models.service_assignment import ServiceAssignment
+        service = Service(**test_service_file)
+        assignment = ServiceAssignment(**test_assignment)
+        import asyncio
+        asyncio.run(mock_cosmos_container.create_item(service.model_dump()))
+        asyncio.run(mock_cosmos_container.create_item(assignment.model_dump()))
+        mock_tenant_client.verify_tenant_exists.return_value = True
         
         request_body = {
             "serviceId": "file-service",
@@ -232,7 +264,7 @@ class Test異常系:
         }
         
         # Act
-        response = test_client_assignments.post(
+        response = test_client.post(
             "/api/v1/tenants/tenant_acme/services",
             json=request_body
         )
@@ -242,17 +274,17 @@ class Test異常系:
     
     def test_should_return_422_when_service_is_inactive(
         self,
-        test_client_assignments,
-        mock_assignment_service
+        test_client_assignments_with_mocks,
+        test_service_inactive
     ):
         """AT_SA009: POST /tenants/{tenant_id}/services: 非アクティブで422"""
         # Arrange
-        from app.utils.errors import ServiceSettingException, ServiceErrorCode
-        mock_assignment_service.assign_service.side_effect = ServiceSettingException(
-            error_code=ServiceErrorCode.SERVICE_002_INACTIVE,
-            message="Service is inactive",
-            status_code=422
-        )
+        test_client, mock_tenant_client, mock_cosmos_container = test_client_assignments_with_mocks
+        from app.models.service import Service
+        service = Service(**test_service_inactive)
+        import asyncio
+        asyncio.run(mock_cosmos_container.create_item(service.model_dump()))
+        mock_tenant_client.verify_tenant_exists.return_value = True
         
         request_body = {
             "serviceId": "inactive-service",
@@ -260,7 +292,7 @@ class Test異常系:
         }
         
         # Act
-        response = test_client_assignments.post(
+        response = test_client.post(
             "/api/v1/tenants/tenant_acme/services",
             json=request_body
         )
@@ -277,9 +309,7 @@ class Test異常系:
         # Arrange
         from app.utils.errors import ServiceSettingException, ServiceErrorCode
         mock_assignment_service.remove_service_assignment.side_effect = ServiceSettingException(
-            error_code=ServiceErrorCode.ASSIGNMENT_003_NOT_FOUND,
-            message="Assignment not found",
-            status_code=404
+            error_code=ServiceErrorCode.ASSIGNMENT_001_NOT_FOUND
         )
         
         # Act
