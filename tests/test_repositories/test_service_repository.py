@@ -24,7 +24,7 @@ class Test正常系:
         await service_repository.container.create_item(service.model_dump())
         
         # Act
-        result = await service_repository.get("file-service")
+        result = await service_repository.get_service("file-service")
         
         # Assert
         assert result is not None
@@ -35,7 +35,7 @@ class Test正常系:
         """RT_SR002: get_service: 存在しないサービスでNone"""
         # Arrange
         # Act
-        result = await service_repository.get("nonexistent-service")
+        result = await service_repository.get_service("nonexistent-service")
         
         # Assert
         assert result is None
@@ -47,7 +47,7 @@ class Test正常系:
         service = Service(**test_service_file)
         
         # Act
-        result = await service_repository.create(service)
+        result = await service_repository.create_service(service)
         
         # Assert
         assert result.id == "file-service"
@@ -58,11 +58,11 @@ class Test正常系:
         # Arrange
         active_service = Service(**test_service_file)
         inactive_service = Service(**test_service_inactive)
-        await service_repository.create(active_service)
-        await service_repository.create(inactive_service)
+        await service_repository.create_service(active_service)
+        await service_repository.create_service(inactive_service)
         
         # Act
-        result = await service_repository.list_services(is_active=True)
+        result = await service_repository.list_all(is_active=True)
         
         # Assert
         assert len(result) >= 1
@@ -74,11 +74,11 @@ class Test正常系:
         # Arrange
         active_service = Service(**test_service_file)
         inactive_service = Service(**test_service_inactive)
-        await service_repository.create(active_service)
-        await service_repository.create(inactive_service)
+        await service_repository.create_service(active_service)
+        await service_repository.create_service(inactive_service)
         
         # Act
-        result = await service_repository.list_services(is_active=None)
+        result = await service_repository.list_all(is_active=None)
         
         # Assert
         assert len(result) >= 2
@@ -88,7 +88,7 @@ class Test正常系:
         """RT_SR007: find_by_name: サービス名で検索できる"""
         # Arrange
         service = Service(**test_service_file)
-        await service_repository.create(service)
+        await service_repository.create_service(service)
         
         # Act
         result = await service_repository.find_by_name("ファイル管理サービス")
@@ -102,7 +102,7 @@ class Test正常系:
         """RT_SR008: count_active_services: アクティブ数を取得"""
         # Arrange
         service = Service(**test_service_file)
-        await service_repository.create(service)
+        await service_repository.create_service(service)
         
         # Act
         result = await service_repository.count_active_services()
@@ -115,11 +115,10 @@ class Test正常系:
         """RT_SR009: update_service: サービスを更新できる"""
         # Arrange
         service = Service(**test_service_file)
-        await service_repository.create(service)
-        service.name = "Updated Service"
+        await service_repository.create_service(service)
         
         # Act
-        result = await service_repository.update(service)
+        result = await service_repository.update_service("file-service", {"name": "Updated Service"})
         
         # Assert
         assert result.name == "Updated Service"
@@ -129,13 +128,13 @@ class Test正常系:
         """RT_SR010: delete_service: サービスを削除できる"""
         # Arrange
         service = Service(**test_service_file)
-        await service_repository.create(service)
+        await service_repository.create_service(service)
         
         # Act
-        await service_repository.delete("file-service", "_system")
+        await service_repository.delete_service("file-service")
         
         # Assert
-        result = await service_repository.get("file-service")
+        result = await service_repository.get_service("file-service")
         assert result is None
 
 
@@ -147,9 +146,9 @@ class Test異常系:
         """RT_SR004: create_service: 重複IDで409エラー"""
         # Arrange
         service = Service(**test_service_file)
-        await service_repository.create(service)
+        await service_repository.create_service(service)
         
         # Act & Assert
         from azure.cosmos.exceptions import CosmosResourceExistsError
         with pytest.raises(CosmosResourceExistsError):
-            await service_repository.create(service)
+            await service_repository.create_service(service)

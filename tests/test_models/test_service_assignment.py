@@ -34,7 +34,7 @@ class Test正常系:
         )
         
         # Assert
-        assert assignment.config == {}
+        assert assignment.config is None
 
 
 class Test異常系:

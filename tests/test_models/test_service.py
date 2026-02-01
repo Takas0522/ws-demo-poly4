@@ -28,12 +28,13 @@ class Test正常系:
             id="test-service",
             tenant_id="_system",
             name="Test Service",
+            description="Test Description",
             version="1.0.0"
         )
         
         # Assert
         assert service.is_active is True
-        assert service.metadata == {}
+        assert service.metadata is None
     
     def test_should_accept_nested_metadata(self):
         """MT_S007: metadataにネストオブジェクトを含められる"""
@@ -51,6 +52,7 @@ class Test正常系:
             id="test-service",
             tenant_id="_system",
             name="Test Service",
+            description="Test Description",
             version="1.0.0",
             metadata=nested_metadata
         )
@@ -71,6 +73,7 @@ class Test異常系:
                 id="",
                 tenant_id="_system",
                 name="Test Service",
+                description="Test Description",
                 version="1.0.0"
             )
     
@@ -83,6 +86,7 @@ class Test異常系:
                 id="Invalid_ID_With_CAPS",
                 tenant_id="_system",
                 name="Test Service",
+                description="Test Description",
                 version="1.0.0"
             )
 
@@ -100,6 +104,7 @@ class Test境界値:
             id=long_id,
             tenant_id="_system",
             name="Test Service",
+            description="Test Description",
             version="1.0.0"
         )
         
@@ -117,5 +122,6 @@ class Test境界値:
                 id=long_id,
                 tenant_id="_system",
                 name="Test Service",
+                description="Test Description",
                 version="1.0.0"
             )

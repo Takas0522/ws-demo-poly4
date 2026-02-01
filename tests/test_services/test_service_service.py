@@ -27,7 +27,7 @@ class Test正常系:
         """ST_SS001: get_service: サービス詳細取得"""
         # Arrange
         service = Service(**test_service_file)
-        mock_service_repository.get.return_value = service
+        mock_service_repository.get_service.return_value = service
         
         # Act
         result = await service_service.get_service("file-service")
@@ -36,7 +36,7 @@ class Test正常系:
         assert result is not None
         assert result.id == "file-service"
         assert result.name == "ファイル管理サービス"
-        mock_service_repository.get.assert_called_once_with("file-service")
+        mock_service_repository.get_service.assert_called_once_with("file-service")
     
     @pytest.mark.asyncio
     async def test_should_return_none_when_service_not_found(self, service_service, mock_service_repository):

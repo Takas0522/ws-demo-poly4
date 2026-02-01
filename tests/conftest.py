@@ -31,8 +31,8 @@ def mock_cosmos_container():
     # in-memoryストレージ（テスト用データベース）
     storage: Dict[str, Any] = {}
     
-    async def mock_read_item(item_id: str, partition_key: str):
-        key = f"{partition_key}:{item_id}"
+    async def mock_read_item(item: str, partition_key: str):
+        key = f"{partition_key}:{item}"
         if key in storage:
             return storage[key]
         from azure.cosmos.exceptions import CosmosResourceNotFoundError
@@ -51,8 +51,8 @@ def mock_cosmos_container():
         storage[key] = body
         return body
     
-    async def mock_delete_item(item_id: str, partition_key: str):
-        key = f"{partition_key}:{item_id}"
+    async def mock_delete_item(item: str, partition_key: str):
+        key = f"{partition_key}:{item}"
         if key in storage:
             del storage[key]
         else:
@@ -61,6 +61,24 @@ def mock_cosmos_container():
     
     def mock_query_items(query: str, parameters=None, partition_key=None, enable_cross_partition_query=False):
         items = []
+        # Check if this is a COUNT query
+        if "COUNT" in query.upper():
+            # Return a simple integer count
+            count = 0
+            for key, item in storage.items():
+                if partition_key and item.get('tenant_id') != partition_key:
+                    continue
+                # Apply basic filtering based on query
+                if "type = 'service'" in query and item.get('type') == 'service':
+                    if "is_active = true" in query and item.get('is_active') == True:
+                        count += 1
+                    elif "is_active" not in query:
+                        count += 1
+                elif "type = 'service_assignment'" in query and item.get('type') == 'service_assignment':
+                    count += 1
+            return AsyncIteratorMock([count])
+        
+        # Regular query - return full items
         for key, item in storage.items():
             if partition_key and item.get('tenant_id') != partition_key:
                 continue
