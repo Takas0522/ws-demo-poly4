@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     # 特権テナントID
     privileged_tenant_id: str = "privileged-tenant-001"
 
+    # Application Insights settings
+    applicationinsights_connection_string: str = ""
+
     # Log settings
     log_level: str = "INFO"
 
