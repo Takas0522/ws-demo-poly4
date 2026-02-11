@@ -2,7 +2,7 @@
 
 ## 概要
 
-本サービスは、テナント（組織）とテナント所属ユーザーを管理するマイクロサービスです。  
+本サービスは、テナント（組織）とテナント所属ユーザーを管理するマイクロサービスです。
 マルチテナントアーキテクチャの中核を担い、テナントのライフサイクル管理と特権テナントの保護機能を提供します。
 
 ## 技術スタック
@@ -97,6 +97,7 @@ API ドキュメント: http://localhost:8002/docs
 ### 新しいエンドポイントの追加
 
 1. **モデル定義** (`app/models/`)
+
 ```python
 # app/models/tenant.py
 from pydantic import BaseModel
@@ -108,6 +109,7 @@ class TenantCreate(BaseModel):
 ```
 
 2. **リポジトリ実装** (`app/repositories/`)
+
 ```python
 # app/repositories/tenant_repository.py
 class TenantRepository:
@@ -117,12 +119,13 @@ class TenantRepository:
 ```
 
 3. **サービス実装** (`app/services/`)
+
 ```python
 # app/services/tenant_service.py
 class TenantService:
     def __init__(self, tenant_repo: TenantRepository):
         self.tenant_repo = tenant_repo
-    
+
     async def create_tenant(self, tenant: TenantCreate) -> Tenant:
         # 特権テナントのチェック
         # ビジネスロジック
@@ -130,6 +133,7 @@ class TenantService:
 ```
 
 4. **エンドポイント実装** (`app/api/v1/`)
+
 ```python
 # app/api/v1/tenants.py
 from fastapi import APIRouter, Depends
@@ -198,12 +202,14 @@ pytest --cov=app tests/
 ### テナント管理
 
 #### テナント一覧取得
+
 ```http
 GET /api/v1/tenants?page=1&limit=20
 Authorization: Bearer {token}
 ```
 
 **レスポンス**:
+
 ```json
 {
   "items": [
@@ -224,12 +230,14 @@ Authorization: Bearer {token}
 ```
 
 #### テナント詳細取得
+
 ```http
 GET /api/v1/tenants/{tenant_id}
 Authorization: Bearer {token}
 ```
 
 #### テナント作成
+
 ```http
 POST /api/v1/tenants
 Authorization: Bearer {token}
@@ -242,6 +250,7 @@ Content-Type: application/json
 ```
 
 #### テナント更新
+
 ```http
 PUT /api/v1/tenants/{tenant_id}
 Authorization: Bearer {token}
@@ -254,6 +263,7 @@ Content-Type: application/json
 ```
 
 #### テナント削除
+
 ```http
 DELETE /api/v1/tenants/{tenant_id}
 Authorization: Bearer {token}
@@ -264,12 +274,14 @@ Authorization: Bearer {token}
 ### テナントユーザー管理
 
 #### テナントユーザー一覧取得
+
 ```http
 GET /api/v1/tenants/{tenant_id}/users
 Authorization: Bearer {token}
 ```
 
 #### ユーザーをテナントに追加
+
 ```http
 POST /api/v1/tenant-users
 Authorization: Bearer {token}
@@ -282,12 +294,13 @@ Content-Type: application/json
 ```
 
 #### テナントからユーザーを削除
+
 ```http
 DELETE /api/v1/tenant-users/{tenant_user_id}
 Authorization: Bearer {token}
 ```
 
-詳細は [API設計仕様書](../../docs/arch/api/api-specification.md#3-テナント管理サービス-api) を参照してください。
+詳細は [API設計仕様書](./docs/api-specification.md) を参照してください。
 
 ## データモデル
 
@@ -374,10 +387,12 @@ curl http://localhost:8001/health
 
 ## 関連ドキュメント
 
-- [コンポーネント設計 - テナント管理サービス](../../docs/arch/components/README.md#3-テナント管理サービス)
-- [API設計仕様書](../../docs/arch/api/api-specification.md#3-テナント管理サービス-api)
+- [コンポーネント設計](./docs/component-design.md)
+- [API設計仕様書](./docs/api-specification.md)
+- [API共通仕様](../../docs/arch/api/api-specification.md)
 - [データ設計](../../docs/arch/data/data-model.md#21-テナント管理データモデル)
 - [アーキテクチャ概要](../../docs/arch/overview.md)
+- [IaC定義](./infra/container-app.bicep)
 
 ## ライセンス
 
