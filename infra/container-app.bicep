@@ -106,7 +106,7 @@ resource tenantServiceApp 'Microsoft.App/containerApps@2023-05-01' = {
       containers: [
         {
           name: 'tenant-service'
-          image: '${containerRegistryLoginServer}/tenant-service:latest'
+          image: '${containerRegistryLoginServer}/tenant-management-service:latest'
           env: [
             { name: 'SERVICE_NAME', value: 'tenant-management-service' }
             { name: 'PORT', value: '8002' }
