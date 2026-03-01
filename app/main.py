@@ -23,7 +23,7 @@ app = FastAPI(
 )
 
 # Application Insights テレメトリ & 集約例外ハンドラの初期化
-setup_telemetry(app, settings.applicationinsights_connection_string or None)
+setup_telemetry(app, settings.applicationinsights_connection_string or None, cloud_role_name="tenant-management-service")
 
 # CORS configuration
 app.add_middleware(
