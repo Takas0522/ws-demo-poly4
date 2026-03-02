@@ -34,10 +34,6 @@ param appInsightsConnectionString string
 param cosmosDbEndpoint string
 
 @secure()
-@description('Cosmos DB プライマリキー')
-param cosmosDbKey string
-
-@secure()
 @description('Service Shared Secret')
 param serviceSharedSecret string
 
@@ -64,6 +60,9 @@ resource tenantServiceApp 'Microsoft.App/containerApps@2023-05-01' = {
   name: 'ca-tenant-${environment}'
   location: location
   tags: union(tags, { Service: 'tenant-management-service' })
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     managedEnvironmentId: containerAppsEnvironmentId
     configuration: {
@@ -89,10 +88,6 @@ resource tenantServiceApp 'Microsoft.App/containerApps@2023-05-01' = {
       ]
       secrets: [
         {
-          name: 'cosmos-db-key'
-          value: cosmosDbKey
-        }
-        {
           name: 'service-shared-secret'
           value: serviceSharedSecret
         }
@@ -112,7 +107,6 @@ resource tenantServiceApp 'Microsoft.App/containerApps@2023-05-01' = {
             { name: 'PORT', value: '8002' }
             { name: 'ENVIRONMENT', value: environment }
             { name: 'COSMOS_DB_ENDPOINT', value: cosmosDbEndpoint }
-            { name: 'COSMOS_DB_KEY', secretRef: 'cosmos-db-key' }
             { name: 'COSMOS_DB_DATABASE', value: 'tenant_management' }
             { name: 'SERVICE_SHARED_SECRET', secretRef: 'service-shared-secret' }
             { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsightsConnectionString }
@@ -146,3 +140,4 @@ resource tenantServiceApp 'Microsoft.App/containerApps@2023-05-01' = {
 // -----------------------------------------------------------------------------
 output fqdn string = tenantServiceApp.properties.configuration.ingress.fqdn
 output name string = tenantServiceApp.name
+output principalId string = tenantServiceApp.identity.principalId
