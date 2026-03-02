@@ -7,17 +7,24 @@ from ..config import get_settings
 settings = get_settings()
 
 
+def _create_cosmos_client():
+    """Cosmos DBクライアントを作成する（AAD認証またはキー認証）"""
+    kwargs = dict(
+        connection_verify=settings.cosmos_db_connection_verify,
+        connection_mode="Gateway",
+        enable_endpoint_discovery=False,
+    )
+    if settings.cosmos_db_key:
+        return CosmosClient(settings.cosmos_db_endpoint, settings.cosmos_db_key, **kwargs)
+    from azure.identity import DefaultAzureCredential
+    return CosmosClient(settings.cosmos_db_endpoint, DefaultAzureCredential(), **kwargs)
+
+
 class TenantRepository:
     """テナントデータアクセス"""
 
     def __init__(self):
-        self.client = CosmosClient(
-            settings.cosmos_db_endpoint,
-            settings.cosmos_db_key,
-            connection_verify=settings.cosmos_db_connection_verify,
-            connection_mode="Gateway",  # エミュレーター用にGatewayモードを使用
-            enable_endpoint_discovery=False  # IPリダイレクトを無効化
-        )
+        self.client = _create_cosmos_client()
         self.database = self.client.get_database_client(
             settings.cosmos_db_database)
         self.container = self.database.get_container_client(
