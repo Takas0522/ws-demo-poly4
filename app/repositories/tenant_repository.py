@@ -16,8 +16,8 @@ def _create_cosmos_client():
     )
     if settings.cosmos_db_key:
         return CosmosClient(settings.cosmos_db_endpoint, settings.cosmos_db_key, **kwargs)
-    from azure.identity import DefaultAzureCredential
-    return CosmosClient(settings.cosmos_db_endpoint, DefaultAzureCredential(), **kwargs)
+    from azure.identity import ManagedIdentityCredential
+    return CosmosClient(settings.cosmos_db_endpoint, ManagedIdentityCredential(), **kwargs)
 
 
 class TenantRepository:
